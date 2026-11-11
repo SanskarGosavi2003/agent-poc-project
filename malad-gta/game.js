@@ -24,8 +24,8 @@ const LMS = [ // approximate positions
   ['Infiniti Mall', 19.1846, 72.8345], ['Natraj Market', 19.1866, 72.8468], ['Liberty Garden', 19.1832, 72.8440],
   ['Orlem', 19.1915, 72.8385], ['Chincholi Bunder', 19.1808, 72.8392], ['Malad East', 19.1862, 72.8530], ['Pushpa Park', 19.1885, 72.8562],
 ];
-const ROADW = { motorway: 16, trunk: 16, primary: 14, secondary: 11, tertiary: 9, unclassified: 7, residential: 7, living_street: 5, service: 4.5 };
-const roadW = k => ROADW[k] || (k.endsWith('_link') ? 7 : 5);
+const ROADW = { motorway: 14, trunk: 14, primary: 11, secondary: 9, tertiary: 7.5, unclassified: 5.5, residential: 5.5, living_street: 4.5, service: 4 };
+const roadW = k => ROADW[k] || (k.endsWith('_link') ? 6 : 4.5);
 
 function fallbackMap() {
   const roads = [], R = (k, n, ...p) => roads.push({ k, n, p });
@@ -68,7 +68,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene(); scene.fog = new THREE.Fog(0xd88a64, 220, 1500);
-const camera = new THREE.PerspectiveCamera(62, 1, .3, 4000);
+const camera = new THREE.PerspectiveCamera(54, 1, .3, 4000);
 const SUN = new THREE.Vector3(-1, .34, .25).normalize();
 scene.add(new THREE.HemisphereLight(0xffe2d2, 0x5a4a58, 1.25));
 const sun = new THREE.DirectionalLight(0xffc089, 3.0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
@@ -262,7 +262,7 @@ function instanced(geo, material, list, shadow = true) { // list: [x,y,z,rotY,sc
 
 function buildWorld(d) {
   SX = d.size[0]; SZ = d.size[1]; GW = Math.ceil(SX / C); GH = Math.ceil(SZ / C); grid = new Uint8Array(GW * GH);
-  for (const r of d.roads) r.w = roadW(r.k);
+  for (const r of d.roads) r.w = r.w0 ? clamp(r.w0, 3.5, 24) : roadW(r.k);
   // --- collision / nav grid
   let m = mask(x => { for (const w of d.water) { if (w.a) { tracePath(x, w.p, true); x.fill(); } else { x.lineWidth = w.w || 6; tracePath(x, w.p); x.stroke(); } } });
   for (let i = 0; i < grid.length; i++) if (m[i * 4 + 3] > 100) grid[i] = WATER;
@@ -280,12 +280,12 @@ function buildWorld(d) {
   // --- filler buildings along roads where OSM has nothing mapped
   let filler = 0;
   for (const r of d.roads) {
-    const big = r.w >= 11;
+    const big = r.w >= 9;
     for (let i = 0; i + 3 < r.p.length && filler < 7000; i += 2) {
       const ax = r.p[i], az = r.p[i + 1], bx = r.p[i + 2], bz = r.p[i + 3], L = Math.hypot(bx - ax, bz - az); if (L < 8) continue;
       const dx = (bx - ax) / L, dz = (bz - az) / L;
       for (let s = 8; s < L - 6; s += sr(15, 20)) for (const side of [1, -1]) {
-        const fw = sr(10, 14), dp = sr(9, 16), off = r.w / 2 + 4.5 + dp / 2, cx = ax + dx * s - dz * off * side, cz = az + dz * s + dx * off * side;
+        const fw = sr(10, 14), dp = sr(9, 16), off = r.w / 2 + 4.1 + dp / 2, cx = ax + dx * s - dz * off * side, cz = az + dz * s + dx * off * side;
         let ok = true;
         for (let u = -fw / 2 - 1; u <= fw / 2 + 1 && ok; u += C * .9) for (let v = -dp / 2 - 1; v <= dp / 2 + 1; v += C * .9) if (cellAt(cx + dx * u - dz * v, cz + dz * u + dx * v) !== OPEN) { ok = false; break; }
         if (!ok) continue;
@@ -302,7 +302,7 @@ function buildWorld(d) {
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(SX + 4000, SZ + 4000), new THREE.MeshLambertMaterial({ map: gt }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(SX / 2, 0, SZ / 2); ground.receiveShadow = true; scene.add(ground);
   const pv = [], rd = [], mk = [], wt = [], pk = [], rl = [], rr = [];
-  for (const r of d.roads) { ribbon(pv, r.p, r.w / 2 + 2.6, .03); ribbon(rd, r.p, r.w / 2, .07); if (r.w >= 9) dashes(mk, r.p, .09, .09); }
+  for (const r of d.roads) { ribbon(pv, r.p, r.w / 2 + 1.8, .03); ribbon(rd, r.p, r.w / 2, .07); if (r.w >= 7.5) dashes(mk, r.p, .09, .09); }
   for (const w of d.water) w.a ? polyFill(wt, w.p, .04) : ribbon(wt, w.p, (w.w || 6) / 2, .04);
   for (const p of d.parks) polyFill(pk, p.p, .02);
   for (const r of d.rails) { ribbon(rl, r.p, 2.2, .05); const n = r.p.length / 2; for (const o of [-.75, .75]) { const q = []; for (let i = 0; i < n; i++) { const j = Math.min(i, n - 2) * 2, dx = r.p[j + 2] - r.p[j], dz = r.p[j + 3] - r.p[j + 1], L = Math.hypot(dx, dz) || 1; q.push(r.p[i * 2] - dz / L * o, r.p[i * 2 + 1] + dx / L * o); } ribbon(rr, q, .09, .05); } }
@@ -321,11 +321,11 @@ function buildWorld(d) {
   instanced(new THREE.CylinderGeometry(.18, .26, 3.2, 6).translate(0, 1.6, 0), new THREE.MeshLambertMaterial({ color: 0x6b4c36 }), trees);
   instanced(mergeGeometries([new THREE.IcosahedronGeometry(2.3, 1).translate(0, 4.6, 0), new THREE.IcosahedronGeometry(1.6, 1).translate(1.3, 3.8, .6), new THREE.IcosahedronGeometry(1.5, 1).translate(-1.1, 4, -.7)]), new THREE.MeshLambertMaterial({ color: 0x3f8f4f, flatShading: true }), trees);
   const palms = [], lamps = [];
-  for (const r of d.roads) if (r.w >= 7) for (let i = 0, run = 0; i + 3 < r.p.length; i += 2) {
+  for (const r of d.roads) if (r.w >= 5.5) for (let i = 0, run = 0; i + 3 < r.p.length; i += 2) {
     const ax = r.p[i], az = r.p[i + 1], bx = r.p[i + 2], bz = r.p[i + 3], L = Math.hypot(bx - ax, bz - az); if (L < 1) continue; const dx = (bx - ax) / L, dz = (bz - az) / L;
     for (let s = 6; s < L; s += 22, run++) {
-      const side = run % 2 ? 1 : -1, o = r.w / 2 + 1.5, x = ax + dx * s - dz * o * side, z = az + dz * s + dx * o * side; if (cellAt(x, z) !== PAVE) continue;
-      if (run % 2 === 0 && lamps.length < 1500) lamps.push([x, 0, z, Math.atan2(dx * side, dz * side)]); else if (r.w >= 9 && palms.length < 1500) palms.push([x, 0, z, srand() * 6, sr(.8, 1.25)]);
+      const side = run % 2 ? 1 : -1, o = r.w / 2 + 1.1, x = ax + dx * s - dz * o * side, z = az + dz * s + dx * o * side; if (cellAt(x, z) !== PAVE) continue;
+      if (run % 2 === 0 && lamps.length < 1500) lamps.push([x, 0, z, Math.atan2(dx * side, dz * side)]); else if (r.w >= 7.5 && palms.length < 1500) palms.push([x, 0, z, srand() * 6, sr(.8, 1.25)]);
     }
   }
   const fr = []; for (let k = 0; k < 8; k++) { const g = new THREE.BoxGeometry(3.4, .06, .75, 4, 1, 1), ps = g.attributes.position; for (let i = 0; i < ps.count; i++) { const x = ps.getX(i) + 1.7; ps.setX(i, x); ps.setY(i, ps.getY(i) + .5 * x - .3 * x * x); } g.rotateY(k * Math.PI / 4 + .2); g.translate(0, 7, 0); fr.push(g); }
@@ -704,7 +704,7 @@ function updateCamera(dt) {
   for (let d = 1; d <= dist; d += .5) if (solid(P.x - fx * d * cp, P.z - fz * d * cp)) { dist = Math.max(1.2, d - .7); break; }
   const tx = P.x - fx * dist * cp, ty = h + dist * Math.sin(camPitch) + (dist < 3 ? 1.5 : 0), tz = P.z - fz * dist * cp, k = Math.min(1, dt * 14);
   camera.position.x += (tx - camera.position.x) * k; camera.position.y += (ty - camera.position.y) * k; camera.position.z += (tz - camera.position.z) * k;
-  camera.lookAt(P.x + fx * 3, h + .2, P.z + fz * 3); camera.fov += (62 + spd * 14 - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix();
+  camera.lookAt(P.x + fx * 3, h + .2, P.z + fz * 3); camera.fov += (54 + spd * 14 - camera.fov) * Math.min(1, dt * 3); camera.updateProjectionMatrix();
   sky.position.copy(camera.position); sun.position.set(P.x + SUN.x * 300, SUN.y * 300, P.z + SUN.z * 300); sun.target.position.set(P.x, 0, P.z);
 }
 const rc = $('radar').getContext('2d');

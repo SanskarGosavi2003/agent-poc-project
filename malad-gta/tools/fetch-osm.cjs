@@ -31,7 +31,7 @@ function convert(elements) {
       if (!closed) continue;
       let h = parseFloat(t.height) || (parseFloat(t['building:levels']) * 3.2) || 0;
       out.buildings.push({ h: r1(h), p });
-    } else if (t.highway) out.roads.push({ k: t.highway, n: t.name || '', p });
+    } else if (t.highway) { const w0 = parseFloat(t.width) || (parseFloat(t.lanes) * 3.2) || 0; out.roads.push(w0 ? { k: t.highway, n: t.name || '', w0: r1(w0), p } : { k: t.highway, n: t.name || '', p }); }
     else if (t.railway === 'rail') out.rails.push({ p });
     else if (t.natural === 'water') out.water.push({ a: closed ? 1 : 0, w: 6, p });
     else if (t.waterway) out.water.push({ a: 0, w: t.waterway === 'river' ? 30 : 6, p });
