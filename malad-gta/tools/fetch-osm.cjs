@@ -1,5 +1,5 @@
 // Downloads Malad (Mumbai) roads, rail, water and parks from OpenStreetMap via Overpass.
-// Usage (Node 18+):  node tools/fetch-osm.js   ->  writes ../malad-osm.json
+// Usage (Node 18+):  node tools/fetch-osm.cjs   ->  writes ../malad-osm.json
 // Data (c) OpenStreetMap contributors, ODbL.
 const fs = require('fs'), path = require('path');
 const BBOX = [19.168, 72.825, 19.205, 72.870]; // south, west, north, east

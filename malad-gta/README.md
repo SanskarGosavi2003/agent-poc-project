@@ -11,7 +11,7 @@ Opening `index.html` directly also works, using the built-in schematic map.
 
 ## Real Malad street layout (optional)
 ```
-node tools/fetch-osm.js         # writes malad-osm.json (roads, rail, water, parks from OpenStreetMap)
+node tools/fetch-osm.cjs         # writes malad-osm.json (roads, rail, water, parks from OpenStreetMap)
 ```
 The game loads `malad-osm.json` automatically if it exists and is served over http.
 Map data (c) OpenStreetMap contributors, ODbL. Landmark positions are approximate.

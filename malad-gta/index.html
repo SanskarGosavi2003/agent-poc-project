@@ -501,7 +501,7 @@ function frame(ts){const dt=Math.min(.05,(ts-last)/1000||0);last=ts;if(state.sta
 async function boot(){
   let data=null;
   try{const r=await fetch('malad-osm.json');if(r.ok){data=osmData(await r.json());mapMode='Map: real OpenStreetMap roads of Malad';}}catch(e){}
-  if(!data){data=fallbackData();mapMode='Map: schematic Malad (run tools/fetch-osm.js and serve over http for the real street layout)';}
+  if(!data){data=fallbackData();mapMode='Map: schematic Malad (run tools/fetch-osm.cjs and serve over http for the real street layout)';}
   buildWorld(data);
   document.getElementById('mode').textContent=mapMode;
   P.x=startPt.x;P.y=startPt.y;cam.x=P.x;cam.y=P.y;
