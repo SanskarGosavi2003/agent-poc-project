@@ -21,3 +21,8 @@ don't allow downloading it to reconstruct or redistribute a city.
 
 ## Controls
 WASD move/drive, mouse look, E enter/exit vehicle, click or F shoot, Shift sprint, Space handbrake, H horn.
+
+## Third-party assets
+- `vendor/` is three.js r160 (MIT).
+- `assets/Soldier.glb`, `assets/Michelle.glb` (Mixamo characters) and `assets/waternormals.jpg` come from the three.js examples repository.
+Everything else (buildings, shopfronts, roads, vehicles) is generated in code.
